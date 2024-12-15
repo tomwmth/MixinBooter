@@ -2,85 +2,35 @@ name: Deploy
 
 on:
   push:
-    tags:
-      - '[0-9]+.[0-9]+'
-      - '[0-9]+.[0-9]+.[0-9]+'
+    branches:
+      - "alpine"
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
+      - name: "Checkout repository"
+        uses: actions/checkout@v4
 
-      - name: Grant Execute Permission for gradlew
-        run: chmod +x gradlew
-
-      - name: Setup Java
-        uses: actions/setup-java@v3
+      - name: "Setup JDK"
+        uses: actions/setup-java@v4
         with:
-          java-version: '17'
-          distribution: 'zulu'
-          cache: gradle
+          java-version: 17
+          distribution: temurin
 
-      - name: Publish to Maven
-        uses: gradle/gradle-build-action@v2
+      - name: "Setup Gradle"
+        uses: gradle/actions/setup-gradle@v4
         with:
-          arguments: |
-            publish
-            -PCleanroomMaven=${{ vars.CLEANROOM_MAVEN }}
-            -PCleanroomMavenUsername=${{ secrets.MAVEN_NAME }}
-            -PCleanroomMavenPassword=${{ secrets.MAVEN_PASSWORD }}
+          validate-wrappers: true
+          cache-disabled: false
 
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
+      - name: "Publish artifacts"
+        run: ./gradlew publish --full-stacktrace
+        env:
+          ALPINE_MAVEN_NAME: ${{ secrets.ALPINE_MAVEN_NAME }}
+          ALPINE_MAVEN_SECRET: ${{ secrets.ALPINE_MAVEN_SECRET }}
+
+      - name: "Upload artifacts"
+        uses: actions/upload-artifact@v4
         with:
           path: build/libs/
-  upload:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
-
-      - name: Download Artifacts
-        uses: actions/download-artifact@v3
-
-      - name: Read gradle.properties
-        uses: BrycensRanch/read-properties-action@v1
-        id: properties
-        with:
-          file: gradle.properties
-          all: true
-
-      - name: Read CHANGELOG.md
-        id: changelog
-        uses: 3liz/changelog-release@0.2.0
-        with:
-          add_emojis: false
-
-      - name: Publish to CurseForge + Modrinth
-        uses: Kir-Antipov/mc-publish@v3.3
-        with:
-          name: ${{ steps.properties.outputs.mod_name }} ${{ steps.properties.outputs.mod_version }}
-          version: ${{ steps.properties.outputs.mod_version }}
-          version-type: ${{ steps.properties.outputs.version_type }}
-          changelog: ${{ steps.changelog.outputs.markdown }}
-          loaders: forge
-          game-versions: |
-            [1.8,1.12.2]
-          game-version-filter: releases
-          java: 8
-          files: |
-            artifact/!(*-@(dev|sources|javadoc)).jar
-            artifact/*-@(dev).jar
-            artifact/*-@(sources).jar
-            artifact/*-@(javadoc).jar
-
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
-          curseforge-id: 419286
-          curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
-
-          modrinth-id: G1ckZuWK
-          modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
