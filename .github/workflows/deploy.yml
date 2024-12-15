@@ -25,6 +25,9 @@ jobs:
           validate-wrappers: true
           cache-disabled: false
 
+      - name: "Make script executable"
+        run: chmod +x gradlew
+
       - name: "Publish artifacts"
         run: ./gradlew publish --full-stacktrace
         env:
