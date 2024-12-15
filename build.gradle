@@ -17,7 +17,6 @@ archivesBaseName = 'mixinbooter'
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(8))
-        vendor.set(org.gradle.jvm.toolchain.JvmVendorSpec.AZUL)
     }
     // Generate sources and javadocs jars when building and publishing
     withSourcesJar()
@@ -234,11 +233,11 @@ publishing {
     }
     repositories {
         maven {
-            name = 'CleanroomMaven'
-            url = 'https://repo.cleanroommc.com/releases'
-            credentials(PasswordCredentials)
-            authentication {
-                basic(BasicAuthentication)
+            name = 'AlpinePublic'
+            url = 'https://lib.alpn.cloud/alpine-public'
+            credentials {
+                username = System.getenv("ALPINE_MAVEN_NAME")
+                password = System.getenv("ALPINE_MAVEN_SECRET")
             }
         }
     }
